@@ -28,7 +28,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract version from Cargo.toml
-        run: echo "VERSION=$(awk -F '\"' '/^version = / {print $2}' Cargo.toml)" >> $GITHUB_ENV
+        run: echo "VERSION=$(awk -F '\"' '/^version = / {print $2}' server/Cargo.toml)" >> $GITHUB_ENV
       - name: Build Docker image
         uses: docker/build-push-action@v3
         with:
