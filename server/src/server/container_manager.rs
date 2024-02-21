@@ -1,10 +1,9 @@
 use std::sync::Arc;
 use std::time::Duration;
-use bollard::container::StartContainerOptions;
-use bollard::Docker;
 use log::info;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
+use crate::server::docker::{start_container, stop_container};
 
 pub struct ContainerManager {
     connection_count: Arc<Mutex<u32>>,
@@ -22,26 +21,12 @@ impl ContainerManager {
         }
     }
 
-    fn connect_to_docker() -> Docker {
-        //todo: error handling
-        Docker::connect_with_socket_defaults().unwrap()
-    }
 
-    async fn start_container(&self) {
-        // todo: error handling
-        let docker = Self::connect_to_docker();
-        docker.start_container(&self.container_name, None::<StartContainerOptions<String>>).await.unwrap();
-    }
-
-    async fn stop_container(container_name: &str) {
-        let docker = Self::connect_to_docker();
-        docker.stop_container(container_name, None).await.unwrap();
-    }
 
     pub async fn new_connection(&self) {
         *self.connection_count.lock().await += 1;
         info!("Registered new connection, connection count: {}", self.connection_count.lock().await);
-        self.start_container().await;
+        start_container(&self.container_name).await.unwrap();
     }
 
     pub async fn connection_lost(&self) {
@@ -56,7 +41,7 @@ impl ContainerManager {
             sleep(stop_timeout).await;
             if *connection_count.lock().await == 0 {
                 info!("Stopping container");
-                Self::stop_container(&container_name).await;
+                stop_container(&container_name).await.unwrap();
             }
             else {
                 info!("New clients connected, not stopping container")

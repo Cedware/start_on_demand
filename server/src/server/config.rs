@@ -16,7 +16,8 @@ pub struct Config {
     pub disconnect_timeout: Duration,
     pub stop_container_timeout: Duration,
     pub mode: Mode,
-    pub container_name: String
+    pub container_name: String,
+    pub stop_container_on_start: bool
 }
 
 impl Config {
@@ -26,6 +27,7 @@ impl Config {
         let disconnect_timeout = env::var("DISCONNECT_TIMEOUT").unwrap().parse::<u64>().unwrap();
         let stop_container_timeout = env::var("STOP_CONTAINER_TIMEOUT").unwrap().parse::<u64>().unwrap();
         let container_name = env::var("CONTAINER_NAME").unwrap();
+        let stop_container_on_start = env::var("STOP_CONTAINER_ON_START").unwrap().parse::<bool>().unwrap();
 
         let mode = match env::var("MODE").unwrap().as_str() {
             "tcp" => Mode::Tcp,
@@ -38,6 +40,7 @@ impl Config {
             remote_addr,
             mode,
             container_name,
+            stop_container_on_start,
             disconnect_timeout: Duration::from_secs(disconnect_timeout),
             stop_container_timeout: Duration::from_secs(stop_container_timeout)
         }
