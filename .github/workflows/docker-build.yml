@@ -1,0 +1,57 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - dev
+
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract version from Cargo.toml
+        run: echo "VERSION=$(awk -F '\"' '/^version = / {print $2}' server/Cargo.toml)" >> $GITHUB_ENV
+      - name: Build Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: false
+          load: true
+
+      - name: Push Docker image for main branch
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/cedware/start_on_demand:${{ env.VERSION }}
+            ghcr.io/cedware/start_on_demand:latest
+            ghcr.io/cedware/start_on_demand:${{ github.sha }}
+
+      - name: Push Docker image for other branches
+        if: github.ref != 'refs/heads/main'
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/cedware/start_on_demand:${{ github.sha }}
